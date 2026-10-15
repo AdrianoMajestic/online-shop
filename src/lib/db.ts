@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -19,7 +17,9 @@ if (!cached) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (!MONGODB_URI) {
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
     throw new Error(
       "Пожалуйста, укажите переменную окружения MONGODB_URI в файле .env или .env.local"
     );
@@ -35,7 +35,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       serverSelectionTimeoutMS: 5000,
     };
 
-    cached!.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
+    cached!.promise = mongoose.connect(uri, opts).then((m) => {
       return m;
     });
   }
