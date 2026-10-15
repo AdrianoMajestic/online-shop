@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ShoppingBag, Search, User, ShieldCheck } from "lucide-react";
+import { ShoppingBag, Search, ShieldCheck } from "lucide-react";
+import { UserNav } from "@/components/UserNav";
 
 export function Header() {
   return (
@@ -83,13 +84,7 @@ export function Header() {
             </span>
           </Link>
 
-          <Link
-            href="/account"
-            className="flex items-center gap-2 h-10 px-3.5 rounded-lg border border-border bg-background hover:bg-muted/70 transition-colors text-sm font-medium text-foreground"
-          >
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="hidden sm:inline">Войти</span>
-          </Link>
+          <UserNav />
         </div>
       </div>
     </header>
