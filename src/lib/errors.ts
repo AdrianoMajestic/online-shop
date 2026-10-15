@@ -87,7 +87,13 @@ export function formatErrorResponse(
 }
 
 export function handleError(error: unknown): NextResponse<ApiErrorResponse> {
-  console.error("[API Error]:", error);
+  if (error instanceof ZodError) {
+    console.error("[API Error] Validation failed:", error.message);
+  } else if (error instanceof Error) {
+    console.error(`[API Error] ${error.name}:`, error.message);
+  } else {
+    console.error("[API Error]:", error);
+  }
 
   if (error instanceof AppError) {
     return NextResponse.json(
