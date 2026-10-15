@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import mongoose from "mongoose";
-import { connectToDatabase } from "../src/lib/db";
+import { connectToDatabase, getMongoDb } from "../src/lib/db";
+import { auth } from "../src/lib/auth";
 import {
   Category,
   Brand,
@@ -984,6 +985,72 @@ async function seed() {
     );
   }
   console.log("✅ [Seed] Базовые отзывы успешно обработаны.");
+
+  // 7. Seed Test Users (via Better Auth API & idempotent upsert)
+  console.log("👤 [Seed] Наполнение тестовых пользователей Better Auth...");
+  const db = getMongoDb();
+  const testUsers = [
+    {
+      email: "admin@shop.test",
+      name: "Администратор Кабачок",
+      role: "admin",
+      password: "Passw0rd1",
+      assignedCategoryIds: [] as string[],
+    },
+    {
+      email: "manager@shop.test",
+      name: "Менеджер Каталога",
+      role: "manager",
+      password: "Passw0rd1",
+      // Manager is assigned 2 categories: Смартфоны и гаджеты, Ноутбуки и компьютеры
+      assignedCategoryIds: [
+        categoryMap.get("smartfony-i-gadzhety")?.toString(),
+        categoryMap.get("noutbuki-i-kompyutery")?.toString(),
+      ].filter(Boolean) as string[],
+    },
+    {
+      email: "user@shop.test",
+      name: "Тестовый Покупатель",
+      role: "customer",
+      password: "Passw0rd1",
+      assignedCategoryIds: [] as string[],
+    },
+  ];
+
+  for (const u of testUsers) {
+    const existingUser = await db.collection("user").findOne({ email: u.email });
+    if (!existingUser) {
+      try {
+        await auth.api.signUpEmail({
+          body: {
+            email: u.email,
+            password: u.password,
+            name: u.name,
+            consents: {
+              personalData: { given: true, at: new Date() },
+              marketing: { given: true, at: new Date() },
+            },
+          },
+        });
+        console.log(`  + Создан пользователь ${u.email}`);
+      } catch (err) {
+        console.warn(`  ! Регистрация ${u.email}:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    // Idempotently update role and assignedCategoryIds
+    await db.collection("user").updateOne(
+      { email: u.email },
+      {
+        $set: {
+          role: u.role,
+          assignedCategoryIds: u.assignedCategoryIds,
+          name: u.name,
+        },
+      }
+    );
+  }
+  console.log(`✅ [Seed] Тестовых пользователей обработано: ${testUsers.length}`);
 
   console.log("🎉 [Seed] База данных успешно наполнена начальными данными!");
 }
