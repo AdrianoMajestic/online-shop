@@ -1,7 +1,8 @@
 import mongoose, { FilterQuery } from "mongoose";
+import { connectToDatabase } from "@/lib/db";
 import { Category, ICategory } from "@/models/Category";
 import { Product, IProduct } from "@/models/Product";
-import { Brand } from "@/models/Brand";
+import { Brand, IBrand } from "@/models/Brand";
 import { NotFoundError } from "@/lib/errors";
 import { GetProductsQuery } from "@/lib/validations/catalog";
 
@@ -27,6 +28,7 @@ export interface PaginatedProductsResult {
  * Builds a hierarchical tree of visible categories
  */
 export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
+  await connectToDatabase();
   const categories = await Category.find({ isVisible: true })
     .sort({ sortOrder: 1, _id: 1 })
     .lean<ICategory[]>();
@@ -69,6 +71,7 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
  * Collects IDs of a category and all its subcategories (recursively)
  */
 export async function getCategoryAndDescendantIds(slug: string): Promise<mongoose.Types.ObjectId[]> {
+  await connectToDatabase();
   const targetCategory = await Category.findOne({ slug, isVisible: true }).lean<ICategory>();
   if (!targetCategory) {
     return [];
@@ -102,7 +105,11 @@ function escapeRegex(text: string): string {
 /**
  * Queries published and non-deleted products with filtering, search, sorting and pagination
  */
-export async function getProducts(query: GetProductsQuery): Promise<PaginatedProductsResult> {
+export async function getProducts(query: Partial<GetProductsQuery> = {}): Promise<PaginatedProductsResult> {
+  await connectToDatabase();
+  const page = query.page && query.page >= 1 ? query.page : 1;
+  const limit = query.limit && query.limit >= 1 ? query.limit : 20;
+
   const filter: FilterQuery<IProduct> = {
     isPublished: true,
     deletedAt: null,
@@ -128,8 +135,8 @@ export async function getProducts(query: GetProductsQuery): Promise<PaginatedPro
       // Specified category doesn't exist or is not visible, return empty list
       return {
         items: [],
-        page: query.page,
-        limit: query.limit,
+        page,
+        limit,
         total: 0,
       };
     }
@@ -143,8 +150,8 @@ export async function getProducts(query: GetProductsQuery): Promise<PaginatedPro
     if (brandIds.length === 0) {
       return {
         items: [],
-        page: query.page,
-        limit: query.limit,
+        page,
+        limit,
         total: 0,
       };
     }
@@ -185,7 +192,7 @@ export async function getProducts(query: GetProductsQuery): Promise<PaginatedPro
   }
 
   // 6. Pagination
-  const skip = (query.page - 1) * query.limit;
+  const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
     Product.find(filter)
@@ -193,15 +200,15 @@ export async function getProducts(query: GetProductsQuery): Promise<PaginatedPro
       .populate("brandId", "title slug logoUrl")
       .sort(sortOption)
       .skip(skip)
-      .limit(query.limit)
+      .limit(limit)
       .lean<IProduct[]>(),
     Product.countDocuments(filter),
   ]);
 
   return {
     items,
-    page: query.page,
-    limit: query.limit,
+    page,
+    limit,
     total,
   };
 }
@@ -210,6 +217,7 @@ export async function getProducts(query: GetProductsQuery): Promise<PaginatedPro
  * Returns detailed product by slug
  */
 export async function getProductBySlug(slug: string): Promise<IProduct> {
+  await connectToDatabase();
   const product = await Product.findOne({
     slug: slug.toLowerCase(),
     isPublished: true,
@@ -224,4 +232,12 @@ export async function getProductBySlug(slug: string): Promise<IProduct> {
   }
 
   return product;
+}
+
+/**
+ * Returns all available brands sorted alphabetically
+ */
+export async function getAllBrands(): Promise<IBrand[]> {
+  await connectToDatabase();
+  return Brand.find().sort({ title: 1, _id: 1 }).lean<IBrand[]>();
 }
