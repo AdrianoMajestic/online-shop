@@ -39,7 +39,7 @@ export function Header() {
         </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center gap-1.5 text-sm">
+        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-sm shrink-0">
           {navItems.map((item) => {
             const isActive = item.matchPrefixes.some(
               (prefix) => pathname === prefix || pathname.startsWith(prefix)
@@ -49,7 +49,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                className={`px-2.5 lg:px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-all duration-200 ${
                   isActive
                     ? "font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 shadow-xs"
                     : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60"
