@@ -126,58 +126,52 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         </p>
       </div>
 
-      {/* Main Catalog View with Sidebar */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* Filter Controls (Client component that syncs with URL) */}
-        <CatalogFilters
-          categories={categories}
-          brands={serializedBrands}
-          currentCategory={query.category}
-          currentBrands={query.brand || []}
-          currentPriceMin={query.priceMin}
-          currentPriceMax={query.priceMax}
-          currentSort={query.sort}
-          currentQ={query.q}
-          totalProducts={productsResult.total}
-        />
-
-        {/* Product Grid & Pagination Area */}
-        <main className="flex-1 w-full min-w-0">
-          {productsResult.total === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border p-12 text-center bg-card/50 my-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">
-                <PackageOpen className="h-8 w-8" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground">Ничего не найдено</h2>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-md">
-                По вашему запросу не найдено ни одного товара. Попробуйте изменить параметры фильтров или поисковый запрос.
-              </p>
-              <Link
-                href="/catalog"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500 transition-colors"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>Сбросить все фильтры</span>
-              </Link>
+      {/* Catalog Content (Sidebar on left, sorting top-right, product grid and pagination) */}
+      <CatalogFilters
+        categories={categories}
+        brands={serializedBrands}
+        currentCategory={query.category}
+        currentBrands={query.brand || []}
+        currentPriceMin={query.priceMin}
+        currentPriceMax={query.priceMax}
+        currentSort={query.sort}
+        currentQ={query.q}
+        totalProducts={productsResult.total}
+      >
+        {productsResult.total === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border p-12 text-center bg-card/50 my-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">
+              <PackageOpen className="h-8 w-8" />
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {serializedProducts.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))}
-              </div>
+            <h2 className="text-lg font-bold text-foreground">Ничего не найдено</h2>
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-md">
+              По вашему запросу не найдено ни одного товара. Попробуйте изменить параметры фильтров или поисковый запрос.
+            </p>
+            <Link
+              href="/catalog"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500 transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Сбросить все фильтры</span>
+            </Link>
+          </div>
+        ) : (
+          <main>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {serializedProducts.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
 
-              {/* Pagination */}
-              <Pagination
-                page={query.page || 1}
-                limit={query.limit || 12}
-                total={productsResult.total}
-              />
-            </>
-          )}
-        </main>
-      </div>
+            {/* Pagination */}
+            <Pagination
+              page={query.page || 1}
+              limit={query.limit || 12}
+              total={productsResult.total}
+            />
+          </main>
+        )}
+      </CatalogFilters>
     </div>
   );
 }

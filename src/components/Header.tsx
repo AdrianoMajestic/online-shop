@@ -1,9 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ShoppingBag, ShieldCheck } from "lucide-react";
 import { UserNav } from "@/components/UserNav";
 import { HeaderSearch } from "@/components/HeaderSearch";
 
+const navItems = [
+  { label: "Каталог", href: "/catalog", matchPrefixes: ["/catalog", "/product/"] },
+  { label: "Доставка", href: "/delivery", matchPrefixes: ["/delivery"] },
+  { label: "Оплата", href: "/payment", matchPrefixes: ["/payment"] },
+  { label: "О компании", href: "/about", matchPrefixes: ["/about"] },
+  { label: "Контакты", href: "/contacts", matchPrefixes: ["/contacts"] },
+];
+
 export function Header() {
+  const pathname = usePathname();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -26,37 +39,26 @@ export function Header() {
         </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <Link
-            href="/catalog"
-            className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
-          >
-            Каталог
-          </Link>
-          <Link
-            href="/delivery"
-            className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
-          >
-            Доставка
-          </Link>
-          <Link
-            href="/payment"
-            className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
-          >
-            Оплата
-          </Link>
-          <Link
-            href="/about"
-            className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
-          >
-            О компании
-          </Link>
-          <Link
-            href="/contacts"
-            className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
-          >
-            Контакты
-          </Link>
+        <nav className="hidden md:flex items-center gap-1.5 text-sm">
+          {navItems.map((item) => {
+            const isActive = item.matchPrefixes.some(
+              (prefix) => pathname === prefix || pathname.startsWith(prefix)
+            );
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                  isActive
+                    ? "font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 shadow-xs"
+                    : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Actions */}

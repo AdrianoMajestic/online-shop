@@ -30,6 +30,7 @@ interface CatalogFiltersProps {
   currentSort?: string;
   currentQ?: string;
   totalProducts: number;
+  children?: React.ReactNode;
 }
 
 export function CatalogFilters({
@@ -42,6 +43,7 @@ export function CatalogFilters({
   currentSort = "popular",
   currentQ,
   totalProducts,
+  children,
 }: CatalogFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -349,142 +351,150 @@ export function CatalogFilters({
 
   return (
     <>
-      {/* Top Bar: Active filters, Sort & Mobile trigger */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Mobile Filter Toggle & Count */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsMobileOpen(true)}
-              className="lg:hidden flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-sm"
-              aria-label="Открыть фильтры каталога"
-            >
-              <Filter className="h-4 w-4 text-emerald-600" />
-              <span>Фильтры</span>
-              {activeFiltersCount > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </button>
-
-            <span className="text-xs text-muted-foreground">
-              Найдено: <strong className="text-foreground">{totalProducts}</strong>
-            </span>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <label htmlFor="catalog-sort" className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
-              Сортировка:
-            </label>
-            <div className="relative">
-              <select
-                id="catalog-sort"
-                value={currentSort}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="h-9 appearance-none rounded-xl border border-border bg-card pl-3 pr-8 text-xs font-medium text-foreground focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 shadow-sm cursor-pointer"
-              >
-                <option value="popular">По популярности</option>
-                <option value="price_asc">Сначала дешевле</option>
-                <option value="price_desc">Сначала дороже</option>
-                <option value="new">Сначала новинки</option>
-                <option value="rating">По рейтингу</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+      <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
+        {/* 1. LEFT COLUMN: Sidebar Filters */}
+        <aside className="hidden lg:block w-64 shrink-0">
+          <div className="sticky top-20 rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
+            <div className="flex items-center gap-2 pb-4 mb-4 border-b border-border/60">
+              <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
+              <h2 className="text-sm font-bold text-foreground">Фильтры</h2>
             </div>
+            {filterContent}
           </div>
+        </aside>
+
+        {/* 2. RIGHT COLUMN: Main content area (sorting top-right above product grid) */}
+        <div className="flex-1 w-full min-w-0">
+          {/* Top Bar directly above the product cards */}
+          <div className="mb-6 space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+              {/* Mobile trigger & count info */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileOpen(true)}
+                  className="lg:hidden flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-sm"
+                  aria-label="Открыть фильтры каталога"
+                >
+                  <Filter className="h-4 w-4 text-emerald-600" />
+                  <span>Фильтры</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </button>
+
+                <span className="text-xs text-muted-foreground">
+                  Найдено товаров: <strong className="text-foreground">{totalProducts}</strong>
+                </span>
+              </div>
+
+              {/* Sort Dropdown: Top-right directly above products */}
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <label htmlFor="catalog-sort" className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
+                  Сортировка:
+                </label>
+                <div className="relative">
+                  <select
+                    id="catalog-sort"
+                    value={currentSort}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="h-9 appearance-none rounded-xl border border-border bg-card pl-3 pr-8 text-xs font-medium text-foreground focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 shadow-sm cursor-pointer"
+                  >
+                    <option value="popular">По популярности</option>
+                    <option value="price_asc">Сначала дешевле</option>
+                    <option value="price_desc">Сначала дороже</option>
+                    <option value="new">Сначала новинки</option>
+                    <option value="rating">По рейтингу</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+
+            {/* Active filter badges directly above the cards */}
+            {activeFiltersCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="text-muted-foreground text-[11px]">Применено:</span>
+
+                {currentQ && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-emerald-800 dark:text-emerald-300">
+                    <Search className="h-3 w-3" />
+                    «{currentQ}»
+                    <button
+                      type="button"
+                      onClick={handleClearQ}
+                      aria-label="Удалить поиск"
+                      className="hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+
+                {currentCategory && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs">
+                    Категория: {currentCategory}
+                    <button
+                      type="button"
+                      onClick={() => handleCategorySelect(null)}
+                      aria-label="Удалить фильтр категории"
+                      className="hover:text-emerald-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+
+                {currentBrands.map((brandSlug) => (
+                  <span
+                    key={brandSlug}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs"
+                  >
+                    Бренд: {brandSlug}
+                    <button
+                      type="button"
+                      onClick={() => handleBrandToggle(brandSlug)}
+                      aria-label={`Удалить фильтр бренда ${brandSlug}`}
+                      className="hover:text-emerald-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+
+                {(currentPriceMin !== undefined || currentPriceMax !== undefined) && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs">
+                    Цена:{" "}
+                    {currentPriceMin !== undefined ? `от ${formatPrice(currentPriceMin)}` : ""}{" "}
+                    {currentPriceMax !== undefined ? `до ${formatPrice(currentPriceMax)}` : ""}
+                    <button
+                      type="button"
+                      onClick={handlePriceReset}
+                      aria-label="Сбросить диапазон цен"
+                      className="hover:text-emerald-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleResetAll}
+                  className="text-xs text-emerald-600 hover:underline font-medium ml-1"
+                >
+                  Сбросить все
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Product cards grid and pagination */}
+          {children}
         </div>
-
-        {/* Active Filter Tags */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-            <span className="text-muted-foreground text-[11px]">Применено:</span>
-
-            {currentQ && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-emerald-800 dark:text-emerald-300">
-                <Search className="h-3 w-3" />
-                «{currentQ}»
-                <button
-                  type="button"
-                  onClick={handleClearQ}
-                  aria-label="Удалить поиск"
-                  className="hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {currentCategory && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs">
-                Категория: {currentCategory}
-                <button
-                  type="button"
-                  onClick={() => handleCategorySelect(null)}
-                  aria-label="Удалить фильтр категории"
-                  className="hover:text-emerald-600"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {currentBrands.map((brandSlug) => (
-              <span
-                key={brandSlug}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs"
-              >
-                Бренд: {brandSlug}
-                <button
-                  type="button"
-                  onClick={() => handleBrandToggle(brandSlug)}
-                  aria-label={`Удалить фильтр бренда ${brandSlug}`}
-                  className="hover:text-emerald-600"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-
-            {(currentPriceMin !== undefined || currentPriceMax !== undefined) && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs">
-                Цена:{" "}
-                {currentPriceMin !== undefined ? `от ${formatPrice(currentPriceMin)}` : ""}{" "}
-                {currentPriceMax !== undefined ? `до ${formatPrice(currentPriceMax)}` : ""}
-                <button
-                  type="button"
-                  onClick={handlePriceReset}
-                  aria-label="Сбросить диапазон цен"
-                  className="hover:text-emerald-600"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            <button
-              type="button"
-              onClick={handleResetAll}
-              className="text-xs text-emerald-600 hover:underline font-medium ml-1"
-            >
-              Сбросить все
-            </button>
-          </div>
-        )}
       </div>
-
-      {/* Desktop Sidebar filter card */}
-      <aside className="hidden lg:block w-64 shrink-0">
-        <div className="sticky top-20 rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-          <div className="flex items-center gap-2 pb-4 mb-4 border-b border-border/60">
-            <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
-            <h2 className="text-sm font-bold text-foreground">Фильтры</h2>
-          </div>
-          {filterContent}
-        </div>
-      </aside>
 
       {/* Mobile Drawer */}
       {isMobileOpen && (
