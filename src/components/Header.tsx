@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ShoppingBag, Search, ShieldCheck } from "lucide-react";
+import { ShoppingBag, ShieldCheck } from "lucide-react";
 import { UserNav } from "@/components/UserNav";
+import { HeaderSearch } from "@/components/HeaderSearch";
 
 export function Header() {
   return (
@@ -65,13 +66,7 @@ export function Header() {
             <span>Безопасная оплата</span>
           </div>
 
-          <Link
-            href="/catalog"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted/70 transition-colors"
-            aria-label="Поиск товаров"
-          >
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </Link>
+          <HeaderSearch />
 
           <Link
             href="/cart"
