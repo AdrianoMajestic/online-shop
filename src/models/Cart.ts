@@ -6,7 +6,7 @@ export interface ICartItem {
 }
 
 export interface ICart extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string | mongoose.Types.ObjectId;
   items: ICartItem[];
   createdAt: Date;
   updatedAt: Date;
@@ -35,8 +35,7 @@ const CartItemSchema = new Schema<ICartItem>(
 const CartSchema = new Schema<ICart>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: Schema.Types.Mixed,
       required: [true, "ID пользователя обязателен"],
       unique: true,
       index: true,

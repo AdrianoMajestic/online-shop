@@ -229,6 +229,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               {/* Add to Cart Actions */}
               <div className="pt-2">
                 <AddToCartButton
+                  productId={product._id.toString()}
                   stockQuantity={product.stockQuantity}
                   productTitle={product.title}
                 />

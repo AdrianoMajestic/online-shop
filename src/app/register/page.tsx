@@ -14,11 +14,13 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { useCart } from "@/lib/cart-context";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/account";
+  const { mergeGuestCartOnAuth } = useCart();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -98,6 +100,7 @@ function RegisterForm() {
         return;
       }
 
+      await mergeGuestCartOnAuth();
       router.push(callbackUrl);
       router.refresh();
     } catch (err: unknown) {

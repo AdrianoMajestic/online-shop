@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShoppingBag, Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { useCart } from "@/lib/cart-context";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/account";
+  const { mergeGuestCartOnAuth } = useCart();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,6 +37,7 @@ function LoginForm() {
         return;
       }
 
+      await mergeGuestCartOnAuth();
       router.push(callbackUrl);
       router.refresh();
     } catch {
