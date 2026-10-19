@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ShoppingBag, ShieldCheck } from "lucide-react";
 import { UserNav } from "@/components/UserNav";
 import { HeaderSearch } from "@/components/HeaderSearch";
+import { useCart } from "@/lib/cart-context";
 
 const navItems = [
   { label: "Каталог", href: "/catalog", matchPrefixes: ["/catalog", "/product/"] },
@@ -16,6 +17,7 @@ const navItems = [
 
 export function Header() {
   const pathname = usePathname();
+  const { totalQuantity } = useCart();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -72,13 +74,19 @@ export function Header() {
 
           <Link
             href="/cart"
+            id="header-cart-button"
             className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted/70 transition-colors"
             aria-label="Корзина"
           >
             <ShoppingBag className="h-4 w-4 text-foreground" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
-              0
-            </span>
+            {totalQuantity > 0 && (
+              <span
+                id="header-cart-count"
+                className="absolute -top-1.5 -right-1.5 flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white shadow-sm animate-in zoom-in-75 duration-150"
+              >
+                {totalQuantity > 99 ? "99+" : totalQuantity}
+              </span>
+            )}
           </Link>
 
           <UserNav />

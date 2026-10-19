@@ -1,16 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { ShoppingBag, Plus, Minus, Check, AlertCircle } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Check, AlertCircle, Loader2 } from "lucide-react";
+import { useCart } from "@/lib/cart-context";
 
 interface AddToCartButtonProps {
+  productId: string;
   stockQuantity: number;
   productTitle: string;
 }
 
-export function AddToCartButton({ stockQuantity, productTitle }: AddToCartButtonProps) {
+export function AddToCartButton({ productId, stockQuantity, productTitle }: AddToCartButtonProps) {
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
 
   const isOutOfStock = stockQuantity <= 0;
@@ -23,8 +28,19 @@ export function AddToCartButton({ stockQuantity, productTitle }: AddToCartButton
     setQuantity((prev) => Math.min(stockQuantity, prev + 1));
   };
 
-  const handleAddToCart = () => {
-    if (isOutOfStock) return;
+  const handleAddToCart = async () => {
+    if (isOutOfStock || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    const res = await addItem(productId, quantity);
+    setIsSubmitting(false);
+
+    if (!res.success) {
+      setErrorMessage(res.error || "Не удалось добавить товар в корзину");
+      return;
+    }
 
     setIsAdded(true);
     setShowToast(true);
@@ -87,13 +103,19 @@ export function AddToCartButton({ stockQuantity, productTitle }: AddToCartButton
         <button
           type="button"
           onClick={handleAddToCart}
-          className={`flex-1 h-12 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md active:scale-[0.99] ${
+          disabled={isSubmitting}
+          className={`flex-1 h-12 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md active:scale-[0.99] disabled:opacity-70 ${
             isAdded
               ? "bg-emerald-600 text-white shadow-emerald-600/30"
               : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/20"
           }`}
         >
-          {isAdded ? (
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Добавление...</span>
+            </>
+          ) : isAdded ? (
             <>
               <Check className="h-5 w-5 animate-in zoom-in-50" />
               <span>Добавлено ({quantity} шт.)</span>
@@ -106,6 +128,14 @@ export function AddToCartButton({ stockQuantity, productTitle }: AddToCartButton
           )}
         </button>
       </div>
+
+      {/* Error message */}
+      {errorMessage && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive animate-in fade-in">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {/* Floating feedback message */}
       {showToast && (

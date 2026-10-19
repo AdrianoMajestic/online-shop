@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Star, ShoppingBag, Check, Flame, AlertCircle } from "lucide-react";
 import { formatPrice, getDiscountPercentage } from "@/lib/formatters";
+import { useCart } from "@/lib/cart-context";
 
 export interface ProductCardData {
   _id: string;
@@ -27,6 +28,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addItem } = useCart();
   const [isAdded, setIsAdded] = useState(false);
   const [imgSrc, setImgSrc] = useState(
     product.images?.[0]?.url ||
@@ -43,15 +45,18 @@ export function ProductCard({ product }: ProductCardProps) {
       ? product.brandId.title
       : null;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isOutOfStock) return;
 
-    setIsAdded(true);
-    setTimeout(() => {
-      setIsAdded(false);
-    }, 2000);
+    const res = await addItem(product._id, 1);
+    if (res.success) {
+      setIsAdded(true);
+      setTimeout(() => {
+        setIsAdded(false);
+      }, 2000);
+    }
   };
 
   return (
