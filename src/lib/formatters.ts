@@ -7,6 +7,7 @@ export interface SerializedProduct {
   price: number;
   discountPrice: number | null;
   stockQuantity: number;
+  isPublished?: boolean;
   images: { url: string; alt: string }[];
   attributes: { key: string; value: string }[];
   ratingAvg: number;
@@ -52,6 +53,7 @@ interface RawProductInput {
   price?: number;
   discountPrice?: number | null;
   stockQuantity?: number;
+  isPublished?: boolean;
   images?: { url?: string; alt?: string }[];
   attributes?: { key?: string; value?: string }[];
   ratingAvg?: number;
@@ -85,6 +87,7 @@ export function serializeProduct(product: RawProductInput): SerializedProduct {
     price: product.price || 0,
     discountPrice: product.discountPrice ?? null,
     stockQuantity: product.stockQuantity ?? 0,
+    isPublished: product.isPublished ?? true,
     images: (product.images || []).map((img) => ({
       url: img.url || "",
       alt: img.alt || "",

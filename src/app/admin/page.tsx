@@ -55,17 +55,28 @@ export default async function AdminDashboardPage() {
 
       {/* Navigation cards for future tasks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+        <Link
+          href="/admin/products"
+          id="admin-dashboard-products-card"
+          className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3 hover:border-emerald-500/50 hover:shadow-md transition-all group block"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
             <Package className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Товары</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Товары
+              </h3>
+              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full">
+                Перейти →
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Управление ассортиментом и остатками (T09)
+              Управление ассортиментом, ценами и остатками
             </p>
           </div>
-        </div>
+        </Link>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
