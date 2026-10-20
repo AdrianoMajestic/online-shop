@@ -9,6 +9,11 @@ import {
   Store,
   User,
   ShieldAlert,
+  FolderTree,
+  Award,
+  Truck,
+  Ticket,
+  Users,
 } from "lucide-react";
 
 interface AdminNavProps {
@@ -26,12 +31,17 @@ export function AdminNav({
 }: AdminNavProps) {
   const pathname = usePathname();
 
+  const isDashboardActive = pathname === "/admin";
   const isProductsActive = pathname.startsWith("/admin/products");
   const isOrdersActive = pathname.startsWith("/admin/orders");
-  const isDashboardActive = pathname === "/admin";
+  const isCategoriesActive = pathname.startsWith("/admin/categories");
+  const isBrandsActive = pathname.startsWith("/admin/brands");
+  const isDeliveryActive = pathname.startsWith("/admin/delivery");
+  const isPromocodesActive = pathname.startsWith("/admin/promocodes");
+  const isUsersActive = pathname.startsWith("/admin/users");
 
-  const roleLabel =
-    userRole === "admin" ? "Главный администратор" : "Менеджер каталога";
+  const isAdmin = userRole === "admin";
+  const roleLabel = isAdmin ? "Главный администратор" : "Менеджер каталога";
 
   return (
     <div className="border-b border-border bg-card/50 backdrop-blur mb-6 rounded-2xl p-4 shadow-xs">
@@ -84,7 +94,7 @@ export function AdminNav({
       <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-border/60 overflow-x-auto text-sm">
         <Link
           href="/admin"
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-medium transition-colors ${
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
             isDashboardActive
               ? "bg-purple-600 text-white shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -97,7 +107,7 @@ export function AdminNav({
         <Link
           href="/admin/products"
           id="admin-nav-products-tab"
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-medium transition-colors ${
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
             isProductsActive
               ? "bg-emerald-600 text-white shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -110,7 +120,7 @@ export function AdminNav({
         <Link
           href="/admin/orders"
           id="admin-nav-orders-tab"
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-medium transition-colors ${
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
             isOrdersActive
               ? "bg-blue-600 text-white shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -119,6 +129,75 @@ export function AdminNav({
           <ShoppingCart className="h-4 w-4" />
           <span>Заказы</span>
         </Link>
+
+        {isAdmin && (
+          <>
+            <Link
+              href="/admin/categories"
+              id="admin-nav-categories-tab"
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
+                isCategoriesActive
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              <FolderTree className="h-4 w-4" />
+              <span>Категории</span>
+            </Link>
+
+            <Link
+              href="/admin/brands"
+              id="admin-nav-brands-tab"
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
+                isBrandsActive
+                  ? "bg-amber-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              <Award className="h-4 w-4" />
+              <span>Бренды</span>
+            </Link>
+
+            <Link
+              href="/admin/delivery"
+              id="admin-nav-delivery-tab"
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
+                isDeliveryActive
+                  ? "bg-cyan-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              <Truck className="h-4 w-4" />
+              <span>Доставка</span>
+            </Link>
+
+            <Link
+              href="/admin/promocodes"
+              id="admin-nav-promocodes-tab"
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
+                isPromocodesActive
+                  ? "bg-pink-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              <Ticket className="h-4 w-4" />
+              <span>Промокоды</span>
+            </Link>
+
+            <Link
+              href="/admin/users"
+              id="admin-nav-users-tab"
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
+                isUsersActive
+                  ? "bg-rose-600 text-white shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              <span>Пользователи</span>
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Category RBAC alert for managers */}
@@ -127,8 +206,8 @@ export function AdminNav({
           <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
           <span>
             Режим менеджера: Вы можете просматривать и редактировать товары
-            только в назначенных вам категориях. Доступ к чужим категориям
-            строго блокируется сервером (HTTP 403).
+            только в назначенных вам категориях. Управление справочниками и
+            пользователями доступно исключительно главному администратору.
           </span>
         </div>
       )}
