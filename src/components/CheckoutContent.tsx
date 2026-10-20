@@ -361,20 +361,39 @@ export function CheckoutContent({ initialDeliveryMethods }: CheckoutContentProps
 
           {/* Online payment banner if card_online */}
           {createdOrder.paymentMethod === "card_online" && (
-            <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left flex items-start gap-3">
-              <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-xs sm:text-sm text-foreground">
-                <p className="font-semibold text-amber-700 dark:text-amber-400">
-                  Статус оплаты: Ожидает оплаты (pending)
-                </p>
-                <p className="text-muted-foreground mt-1">
-                  Запись платежа создана в системе. Вы сможете перейти к безопасной тестовой оплате картой в следующем этапе T07.
-                </p>
+            <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs sm:text-sm text-foreground">
+                  <p className="font-semibold text-amber-700 dark:text-amber-400">
+                    Статус оплаты: Ожидает оплаты (pending)
+                  </p>
+                  <p className="text-muted-foreground mt-0.5">
+                    Перейдите в тестовый платежный шлюз для подтверждения или проверки оплаты картой.
+                  </p>
+                </div>
               </div>
+              {createdOrder.paymentId && (
+                <Link
+                  href={`/pay/mock/${createdOrder.paymentId}`}
+                  id="checkout-pay-mock-button"
+                  className="w-full sm:w-auto shrink-0 h-11 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span>Оплатить картой</span>
+                </Link>
+              )}
             </div>
           )}
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href={`/orders/${createdOrder.number}/success`}
+              id="checkout-view-order-details"
+              className="w-full sm:w-auto h-12 px-6 rounded-xl border border-border text-foreground hover:bg-muted font-medium transition-all flex items-center justify-center gap-2"
+            >
+              <span>Посмотреть состав заказа</span>
+            </Link>
             <Link
               href="/catalog"
               id="checkout-continue-shopping"
