@@ -3,6 +3,7 @@ import { requireApiRole } from "@/lib/rbac";
 import { handleError, BadRequestError } from "@/lib/errors";
 import { toggleAdminUserBan } from "@/services/admin-directory.service";
 import { adminToggleUserBanSchema } from "@/lib/validations/admin-directory";
+import { getClientIp } from "@/services/audit";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -19,6 +20,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     const currentAdmin = sessionData.user as { id?: string; _id?: string; email?: string };
     const currentAdminId = currentAdmin.id || currentAdmin._id?.toString() || "";
     const currentAdminEmail = currentAdmin.email;
+    const clientIp = getClientIp(req);
 
     const { id } = await params;
 
@@ -46,6 +48,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       targetUserId: id,
       banned: parsed.data.banned,
       banReason: parsed.data.banReason,
+      ip: clientIp,
     });
 
     return NextResponse.json({ success: true, user: result }, { status: 200 });

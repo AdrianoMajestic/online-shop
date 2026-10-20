@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IAuditLog extends Document {
-  userId: mongoose.Types.ObjectId | null;
+  userId: mongoose.Types.ObjectId | string | null;
   action: string;
   entity: string;
   entityId: string;
@@ -13,7 +13,7 @@ export interface IAuditLog extends Document {
 const AuditLogSchema = new Schema<IAuditLog>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed,
       ref: "User",
       default: null,
       index: true,
@@ -53,8 +53,13 @@ const AuditLogSchema = new Schema<IAuditLog>(
   },
   {
     timestamps: false,
+    bufferCommands: false,
   }
 );
+
+AuditLogSchema.index({ action: 1, at: -1 });
+AuditLogSchema.index({ entity: 1, at: -1 });
+AuditLogSchema.index({ at: -1 });
 
 export const AuditLog: Model<IAuditLog> =
   mongoose.models.AuditLog || mongoose.model<IAuditLog>("AuditLog", AuditLogSchema);

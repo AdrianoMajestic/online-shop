@@ -14,6 +14,7 @@ import {
   Truck,
   Ticket,
   Users,
+  History,
 } from "lucide-react";
 
 interface AdminNavProps {
@@ -39,6 +40,7 @@ export function AdminNav({
   const isDeliveryActive = pathname.startsWith("/admin/delivery");
   const isPromocodesActive = pathname.startsWith("/admin/promocodes");
   const isUsersActive = pathname.startsWith("/admin/users");
+  const isAuditActive = pathname.startsWith("/admin/audit");
 
   const isAdmin = userRole === "admin";
   const roleLabel = isAdmin ? "Главный администратор" : "Менеджер каталога";
@@ -195,6 +197,19 @@ export function AdminNav({
             >
               <Users className="h-4 w-4" />
               <span>Пользователи</span>
+            </Link>
+
+            <Link
+              href="/admin/audit"
+              id="admin-nav-audit-tab"
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-colors shrink-0 ${
+                isAuditActive
+                  ? "bg-slate-800 text-white shadow-xs dark:bg-slate-700"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              <History className="h-4 w-4" />
+              <span>Аудит</span>
             </Link>
           </>
         )}

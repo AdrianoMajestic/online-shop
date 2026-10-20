@@ -6,6 +6,7 @@ import {
   updateAdminOrderStatus,
   StaffUser,
 } from "@/services/admin-order.service";
+import { getClientIp } from "@/services/audit";
 
 interface RouteContext {
   params: {
@@ -16,7 +17,7 @@ interface RouteContext {
 /**
  * PATCH /api/admin/orders/[id]/status
  * Updates order status according to transition rules (A-05), restores stock on cancellation (A-06),
- * logs notification (A-18), and records in statusHistory.
+ * logs notification (A-18), records in statusHistory, and records AuditLog.
  */
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
@@ -26,11 +27,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const body = await req.json();
     const validatedData = updateOrderStatusSchema.parse(body);
 
+    const clientIp = getClientIp(req);
     const updatedOrder = await updateAdminOrderStatus(
       params.id,
       validatedData.status,
       staffUser,
-      validatedData.comment
+      validatedData.comment,
+      { ip: clientIp }
     );
 
     return NextResponse.json({ order: updatedOrder }, { status: 200 });

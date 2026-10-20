@@ -8,6 +8,7 @@ import {
   Award,
   Truck,
   Ticket,
+  History,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -296,6 +297,44 @@ export default async function AdminDashboardPage() {
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Пользователи</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Доступно только главному администратору
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Audit Log */}
+        {isAdmin ? (
+          <Link
+            href="/admin/audit"
+            id="admin-dashboard-audit-card"
+            className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3 hover:border-slate-500/50 hover:shadow-md transition-all group block"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:scale-110 transition-transform">
+              <History className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+                  Журнал аудита
+                </h3>
+                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full">
+                  Перейти →
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Фиксация авторизаций, статусов, цен, остатков и изменений
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card/60 p-5 shadow-sm space-y-3 opacity-60">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              <History className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Журнал аудита</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Доступно только главному администратору
               </p>

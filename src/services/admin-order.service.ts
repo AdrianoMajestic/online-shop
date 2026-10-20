@@ -10,6 +10,7 @@ import {
   ORDER_STATUS_LABELS,
 } from "@/lib/order-status";
 import { AdminOrdersQuery } from "@/lib/validations/admin-order";
+import { audit } from "@/services/audit";
 
 export interface StaffUser {
   id?: string;
@@ -155,7 +156,8 @@ export async function updateAdminOrderStatus(
   orderIdOrNumber: string,
   newStatus: OrderStatus,
   staffUser: StaffUser,
-  commentText?: string
+  commentText?: string,
+  options?: { ip?: string }
 ): Promise<IOrder> {
   await connectToDatabase();
 
@@ -230,6 +232,32 @@ export async function updateAdminOrderStatus(
   console.log(
     `[Order Notification] [A-18] Заказ ${order.number}: статус изменен с «${ORDER_STATUS_LABELS[previousStatus]}» на «${ORDER_STATUS_LABELS[newStatus]}» сотрудником ${staffName} (${staffUser.role || "staff"}).`
   );
+
+  // 5. Audit log (T12, req 62)
+  await audit(
+    "order.status_change",
+    "Order",
+    order._id.toString(),
+    {
+      orderNumber: order.number,
+      from: previousStatus,
+      to: newStatus,
+      fromLabel: ORDER_STATUS_LABELS[previousStatus],
+      toLabel: ORDER_STATUS_LABELS[newStatus],
+      staffName,
+      staffEmail: staffUser.email,
+      staffRole: staffUser.role,
+      comment: commentText?.trim() || null,
+    },
+    {
+      userId: staffId !== "system" ? staffId : null,
+      ip: options?.ip || "",
+      userEmail: staffUser.email,
+      userName: staffName,
+    }
+  ).catch((err) => {
+    console.error("[Audit Error on order status change]", err);
+  });
 
   return order;
 }

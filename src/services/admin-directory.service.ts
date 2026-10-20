@@ -22,6 +22,7 @@ import {
   AdminPromoCodeUpdateInput,
   AdminUsersQuery,
 } from "@/lib/validations/admin-directory";
+import { audit } from "@/services/audit";
 
 // ==================== CATEGORIES ====================
 
@@ -135,7 +136,8 @@ export async function createAdminCategory(input: AdminCategoryCreateInput): Prom
 
 export async function updateAdminCategory(
   id: string,
-  input: AdminCategoryUpdateInput
+  input: AdminCategoryUpdateInput,
+  options?: { userId?: string; ip?: string }
 ): Promise<ICategory> {
   await connectToDatabase();
   const category = await getAdminCategoryById(id);
@@ -177,6 +179,9 @@ export async function updateAdminCategory(
     category.description = input.description.trim();
   }
 
+  const visibilityChanged =
+    input.isVisible !== undefined && input.isVisible !== category.isVisible;
+
   if (input.isVisible !== undefined) {
     category.isVisible = input.isVisible;
   }
@@ -186,10 +191,24 @@ export async function updateAdminCategory(
   }
 
   await category.save();
+
+  if (visibilityChanged) {
+    await audit(
+      category.isVisible ? "category.visibility" : "category.hide",
+      "Category",
+      category._id.toString(),
+      { title: category.title, isVisible: category.isVisible },
+      { userId: options?.userId, ip: options?.ip }
+    ).catch((err) => console.error("[Audit Error on category visibility]", err));
+  }
+
   return category;
 }
 
-export async function deleteAdminCategory(id: string): Promise<{ success: boolean; message: string }> {
+export async function deleteAdminCategory(
+  id: string,
+  options?: { userId?: string; ip?: string }
+): Promise<{ success: boolean; message: string }> {
   await connectToDatabase();
   const category = await getAdminCategoryById(id);
 
@@ -210,6 +229,15 @@ export async function deleteAdminCategory(id: string): Promise<{ success: boolea
   }
 
   await Category.findByIdAndDelete(category._id);
+
+  await audit(
+    "category.delete",
+    "Category",
+    category._id.toString(),
+    { title: category.title, slug: category.slug },
+    { userId: options?.userId, ip: options?.ip }
+  ).catch((err) => console.error("[Audit Error on category delete]", err));
+
   return { success: true, message: `Категория "${category.title}" успешно удалена` };
 }
 
@@ -314,7 +342,10 @@ export async function updateAdminBrand(id: string, input: AdminBrandUpdateInput)
   return brand;
 }
 
-export async function deleteAdminBrand(id: string): Promise<{ success: boolean; message: string }> {
+export async function deleteAdminBrand(
+  id: string,
+  options?: { userId?: string; ip?: string }
+): Promise<{ success: boolean; message: string }> {
   await connectToDatabase();
   const brand = await getAdminBrandById(id);
 
@@ -326,6 +357,15 @@ export async function deleteAdminBrand(id: string): Promise<{ success: boolean; 
   }
 
   await Brand.findByIdAndDelete(brand._id);
+
+  await audit(
+    "brand.delete",
+    "Brand",
+    brand._id.toString(),
+    { title: brand.title, slug: brand.slug },
+    { userId: options?.userId, ip: options?.ip }
+  ).catch((err) => console.error("[Audit Error on brand delete]", err));
+
   return { success: true, message: `Бренд "${brand.title}" успешно удален` };
 }
 
@@ -430,12 +470,22 @@ export async function updateAdminDeliveryMethod(
 }
 
 export async function deleteAdminDeliveryMethod(
-  id: string
+  id: string,
+  options?: { userId?: string; ip?: string }
 ): Promise<{ success: boolean; message: string }> {
   await connectToDatabase();
   const method = await getAdminDeliveryMethodById(id);
 
   await DeliveryMethod.findByIdAndDelete(method._id);
+
+  await audit(
+    "delivery_method.delete",
+    "DeliveryMethod",
+    method._id.toString(),
+    { title: method.title, code: method.code },
+    { userId: options?.userId, ip: options?.ip }
+  ).catch((err) => console.error("[Audit Error on delivery method delete]", err));
+
   return { success: true, message: `Способ доставки "${method.title}" успешно удален` };
 }
 
@@ -576,7 +626,8 @@ export async function updateAdminPromoCode(
 }
 
 export async function deleteAdminPromoCode(
-  id: string
+  id: string,
+  options?: { userId?: string; ip?: string }
 ): Promise<{ success: boolean; message: string }> {
   await connectToDatabase();
   const promo = await getAdminPromoCodeById(id);
@@ -585,6 +636,15 @@ export async function deleteAdminPromoCode(
     // Soft disable to preserve historical order integrity
     promo.isActive = false;
     await promo.save();
+
+    await audit(
+      "promocode.deactivate",
+      "PromoCode",
+      promo._id.toString(),
+      { code: promo.code, usedCount: promo.usedCount, reason: "Deactivated instead of deleted due to historical orders" },
+      { userId: options?.userId, ip: options?.ip }
+    ).catch((err) => console.error("[Audit Error on promo deactivate]", err));
+
     return {
       success: true,
       message: `Промокод "${promo.code}" использовался в заказах (${promo.usedCount} раз) и был деактивирован вместо удаления`,
@@ -592,6 +652,15 @@ export async function deleteAdminPromoCode(
   }
 
   await PromoCode.findByIdAndDelete(promo._id);
+
+  await audit(
+    "promocode.delete",
+    "PromoCode",
+    promo._id.toString(),
+    { code: promo.code },
+    { userId: options?.userId, ip: options?.ip }
+  ).catch((err) => console.error("[Audit Error on promo delete]", err));
+
   return { success: true, message: `Промокод "${promo.code}" успешно удален` };
 }
 
@@ -765,6 +834,7 @@ export async function updateAdminUserRole(params: {
   currentAdminEmail?: string;
   targetUserId: string;
   newRole: "customer" | "manager" | "admin";
+  ip?: string;
 }): Promise<{ id: string; role: string }> {
   await connectToDatabase();
   const db = getMongoDb();
@@ -787,6 +857,8 @@ export async function updateAdminUserRole(params: {
     throw new ConflictError("Администратор не может лишить самого себя роли администратора");
   }
 
+  const oldRole = targetUser.role || "customer";
+
   await db.collection("user").updateOne(
     { _id: targetUser._id },
     {
@@ -796,6 +868,23 @@ export async function updateAdminUserRole(params: {
       },
     }
   );
+
+  await audit(
+    "user.role_change",
+    "User",
+    targetId,
+    {
+      targetEmail: targetUser.email,
+      oldRole,
+      newRole: params.newRole,
+      adminEmail: params.currentAdminEmail,
+    },
+    {
+      userId: params.currentAdminId,
+      ip: params.ip || "",
+      userEmail: params.currentAdminEmail,
+    }
+  ).catch((err) => console.error("[Audit Error on user role change]", err));
 
   return { id: targetId, role: params.newRole };
 }
@@ -810,6 +899,7 @@ export async function toggleAdminUserBan(params: {
   targetUserId: string;
   banned: boolean;
   banReason?: string;
+  ip?: string;
 }): Promise<{ id: string; banned: boolean; banReason?: string }> {
   await connectToDatabase();
   const db = getMongoDb();
@@ -853,6 +943,23 @@ export async function toggleAdminUserBan(params: {
       $or: [{ userId: targetId }, { userId: targetUser._id }],
     });
   }
+
+  await audit(
+    params.banned ? "user.ban" : "user.unban",
+    "User",
+    targetId,
+    {
+      targetEmail: targetUser.email,
+      banned: params.banned,
+      banReason: params.banReason || null,
+      adminEmail: params.currentAdminEmail,
+    },
+    {
+      userId: params.currentAdminId,
+      ip: params.ip || "",
+      userEmail: params.currentAdminEmail,
+    }
+  ).catch((err) => console.error("[Audit Error on user ban/unban]", err));
 
   return {
     id: targetId,

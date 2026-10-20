@@ -15,6 +15,7 @@ import {
   AdminProductCreateInput,
   AdminProductUpdateInput,
 } from "@/lib/validations/admin-product";
+import { audit } from "@/services/audit";
 
 export interface StaffUser {
   id?: string;
@@ -284,7 +285,8 @@ export async function createAdminProduct(
 export async function updateAdminProduct(
   productId: string,
   data: AdminProductUpdateInput,
-  user: StaffUser
+  user: StaffUser,
+  options?: { ip?: string }
 ): Promise<IProduct> {
   await connectToDatabase();
 
@@ -358,6 +360,20 @@ export async function updateAdminProduct(
     product.slug = data.slug;
   }
 
+  // Track previous values for audit logging
+  const oldPrice = product.price;
+  const oldDiscountPrice = product.discountPrice;
+  const oldStock = product.stockQuantity;
+  const oldPublished = product.isPublished;
+
+  const priceChanged =
+    (data.price !== undefined && data.price !== oldPrice) ||
+    (data.discountPrice !== undefined && data.discountPrice !== oldDiscountPrice);
+  const stockChanged =
+    data.stockQuantity !== undefined && data.stockQuantity !== oldStock;
+  const publishedChanged =
+    data.isPublished !== undefined && data.isPublished !== oldPublished;
+
   // 6. Mutate other fields
   if (data.title !== undefined) product.title = data.title;
   if (data.description !== undefined) product.description = data.description;
@@ -375,6 +391,74 @@ export async function updateAdminProduct(
     { path: "brandId", select: "title slug logoUrl" },
   ]);
 
+  // 7. Audit log triggers (T12, req 62)
+  if (priceChanged) {
+    await audit(
+      "product.price_change",
+      "Product",
+      product._id.toString(),
+      {
+        title: product.title,
+        sku: product.sku,
+        oldPrice,
+        newPrice: product.price,
+        oldDiscountPrice,
+        newDiscountPrice: product.discountPrice,
+        staffName: user.name || user.email,
+        staffRole: user.role,
+      },
+      {
+        userId: user.id || null,
+        ip: options?.ip || "",
+        userEmail: user.email,
+        userName: user.name,
+      }
+    ).catch((err) => console.error("[Audit Error on product price change]", err));
+  }
+
+  if (stockChanged) {
+    await audit(
+      "product.stock_change",
+      "Product",
+      product._id.toString(),
+      {
+        title: product.title,
+        sku: product.sku,
+        oldStock,
+        newStock: product.stockQuantity,
+        staffName: user.name || user.email,
+        staffRole: user.role,
+      },
+      {
+        userId: user.id || null,
+        ip: options?.ip || "",
+        userEmail: user.email,
+        userName: user.name,
+      }
+    ).catch((err) => console.error("[Audit Error on product stock change]", err));
+  }
+
+  if (publishedChanged && product.isPublished === false) {
+    await audit(
+      "product.deactivate",
+      "Product",
+      product._id.toString(),
+      {
+        title: product.title,
+        sku: product.sku,
+        isPublished: false,
+        staffName: user.name || user.email,
+        staffRole: user.role,
+      },
+      {
+        userId: user.id || null,
+        ip: options?.ip || "",
+        userEmail: user.email,
+        userName: user.name,
+      }
+    ).catch((err) => console.error("[Audit Error on product deactivation]", err));
+  }
+
   return product;
 }
 
@@ -383,7 +467,8 @@ export async function updateAdminProduct(
  */
 export async function deactivateAdminProduct(
   productId: string,
-  user: StaffUser
+  user: StaffUser,
+  options?: { ip?: string }
 ): Promise<IProduct> {
   await connectToDatabase();
 
@@ -411,6 +496,26 @@ export async function deactivateAdminProduct(
     { path: "brandId", select: "title slug logoUrl" },
   ]);
 
+  // Audit log deactivation (T12)
+  await audit(
+    "product.deactivate",
+    "Product",
+    product._id.toString(),
+    {
+      title: product.title,
+      sku: product.sku,
+      isPublished: false,
+      staffName: user.name || user.email,
+      staffRole: user.role,
+    },
+    {
+      userId: user.id || null,
+      ip: options?.ip || "",
+      userEmail: user.email,
+      userName: user.name,
+    }
+  ).catch((err) => console.error("[Audit Error on product deactivation]", err));
+
   return product;
 }
 
@@ -419,7 +524,8 @@ export async function deactivateAdminProduct(
  */
 export async function togglePublishAdminProduct(
   productId: string,
-  user: StaffUser
+  user: StaffUser,
+  options?: { ip?: string }
 ): Promise<IProduct> {
   await connectToDatabase();
 
@@ -445,6 +551,26 @@ export async function togglePublishAdminProduct(
     { path: "categoryId", select: "title slug" },
     { path: "brandId", select: "title slug logoUrl" },
   ]);
+
+  // Audit log toggle (T12)
+  await audit(
+    product.isPublished ? "product.publish" : "product.deactivate",
+    "Product",
+    product._id.toString(),
+    {
+      title: product.title,
+      sku: product.sku,
+      isPublished: product.isPublished,
+      staffName: user.name || user.email,
+      staffRole: user.role,
+    },
+    {
+      userId: user.id || null,
+      ip: options?.ip || "",
+      userEmail: user.email,
+      userName: user.name,
+    }
+  ).catch((err) => console.error("[Audit Error on product toggle publish]", err));
 
   return product;
 }

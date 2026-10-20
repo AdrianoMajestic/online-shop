@@ -12,6 +12,7 @@ import {
   togglePublishAdminProduct,
   StaffUser,
 } from "@/services/admin-product.service";
+import { getClientIp } from "@/services/audit";
 
 interface RouteContext {
   params: {
@@ -44,11 +45,12 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
     const sessionData = await requireApiRole(["admin", "manager"], req.headers);
     const user = sessionData.user as StaffUser;
+    const clientIp = getClientIp(req);
 
     const body = await req.json();
     const validatedData = adminProductUpdateSchema.parse(body);
 
-    const product = await updateAdminProduct(params.id, validatedData, user);
+    const product = await updateAdminProduct(params.id, validatedData, user, { ip: clientIp });
 
     return NextResponse.json({ product }, { status: 200 });
   } catch (error) {
@@ -64,22 +66,23 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
     const sessionData = await requireApiRole(["admin", "manager"], req.headers);
     const user = sessionData.user as StaffUser;
+    const clientIp = getClientIp(req);
 
     const body = await req.json();
     const validatedPatch = adminProductPatchSchema.parse(body);
 
     if (validatedPatch.action === "deactivate" || validatedPatch.isPublished === false) {
-      const product = await deactivateAdminProduct(params.id, user);
+      const product = await deactivateAdminProduct(params.id, user, { ip: clientIp });
       return NextResponse.json({ product }, { status: 200 });
     }
 
     if (validatedPatch.action === "toggle_publish") {
-      const product = await togglePublishAdminProduct(params.id, user);
+      const product = await togglePublishAdminProduct(params.id, user, { ip: clientIp });
       return NextResponse.json({ product }, { status: 200 });
     }
 
     if (validatedPatch.action === "activate" || validatedPatch.isPublished === true) {
-      const product = await updateAdminProduct(params.id, { isPublished: true }, user);
+      const product = await updateAdminProduct(params.id, { isPublished: true }, user, { ip: clientIp });
       return NextResponse.json({ product }, { status: 200 });
     }
 
@@ -87,7 +90,8 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       const product = await updateAdminProduct(
         params.id,
         { stockQuantity: validatedPatch.stockQuantity },
-        user
+        user,
+        { ip: clientIp }
       );
       return NextResponse.json({ product }, { status: 200 });
     }
@@ -96,7 +100,8 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       const product = await updateAdminProduct(
         params.id,
         { price: validatedPatch.price },
-        user
+        user,
+        { ip: clientIp }
       );
       return NextResponse.json({ product }, { status: 200 });
     }

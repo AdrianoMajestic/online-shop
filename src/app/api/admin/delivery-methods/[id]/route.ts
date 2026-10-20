@@ -7,6 +7,7 @@ import {
   deleteAdminDeliveryMethod,
 } from "@/services/admin-directory.service";
 import { adminDeliveryMethodUpdateSchema } from "@/lib/validations/admin-directory";
+import { getClientIp } from "@/services/audit";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -56,10 +57,14 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
-    await requireApiRole(["admin"], req.headers);
+    const sessionData = await requireApiRole(["admin"], req.headers);
+    const clientIp = getClientIp(req);
     const { id } = await params;
 
-    const result = await deleteAdminDeliveryMethod(id);
+    const result = await deleteAdminDeliveryMethod(id, {
+      userId: sessionData.user.id,
+      ip: clientIp,
+    });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return handleError(error);
