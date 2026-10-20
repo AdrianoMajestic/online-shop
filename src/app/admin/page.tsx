@@ -78,17 +78,28 @@ export default async function AdminDashboardPage() {
           </div>
         </Link>
 
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+        <Link
+          href="/admin/orders"
+          id="admin-dashboard-orders-card"
+          className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3 hover:border-blue-500/50 hover:shadow-md transition-all group block"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
             <ShoppingCart className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Заказы</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                Заказы
+              </h3>
+              <span className="text-[10px] bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">
+                Перейти →
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Статусы и обработка заказов (T10)
+              Статусы, обработка и складская компенсация
             </p>
           </div>
-        </div>
+        </Link>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400">

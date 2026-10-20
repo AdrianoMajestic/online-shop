@@ -27,6 +27,7 @@ export function AdminNav({
   const pathname = usePathname();
 
   const isProductsActive = pathname.startsWith("/admin/products");
+  const isOrdersActive = pathname.startsWith("/admin/orders");
   const isDashboardActive = pathname === "/admin";
 
   const roleLabel =
@@ -106,16 +107,18 @@ export function AdminNav({
           <span>Товары</span>
         </Link>
 
-        <div
-          title="Раздел управления заказами разрабатывается в задаче T10"
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-medium text-muted-foreground/60 cursor-not-allowed"
+        <Link
+          href="/admin/orders"
+          id="admin-nav-orders-tab"
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-medium transition-colors ${
+            isOrdersActive
+              ? "bg-blue-600 text-white shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          }`}
         >
           <ShoppingCart className="h-4 w-4" />
           <span>Заказы</span>
-          <span className="text-[10px] bg-muted px-1.5 py-0.2 rounded-md font-normal border border-border/50">
-            T10
-          </span>
-        </div>
+        </Link>
       </div>
 
       {/* Category RBAC alert for managers */}

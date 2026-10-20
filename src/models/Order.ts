@@ -47,7 +47,8 @@ export interface IOrderPromoSnapshot {
 }
 
 export interface IOrderManagerComment {
-  authorId: mongoose.Types.ObjectId;
+  authorId: mongoose.Types.ObjectId | string;
+  authorName?: string;
   text: string;
   at: Date;
 }
@@ -55,7 +56,8 @@ export interface IOrderManagerComment {
 export interface IOrderStatusHistory {
   from: string;
   to: string;
-  byUserId: mongoose.Types.ObjectId | null;
+  byUserId: mongoose.Types.ObjectId | string | null;
+  byUserName?: string;
   at: Date;
 }
 
@@ -174,7 +176,8 @@ const OrderPromoSnapshotSchema = new Schema<IOrderPromoSnapshot>(
 
 const OrderManagerCommentSchema = new Schema<IOrderManagerComment>(
   {
-    authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    authorId: { type: Schema.Types.Mixed, ref: "User", required: true },
+    authorName: { type: String, default: "" },
     text: { type: String, required: true, trim: true },
     at: { type: Date, default: Date.now },
   },
@@ -185,7 +188,8 @@ const OrderStatusHistorySchema = new Schema<IOrderStatusHistory>(
   {
     from: { type: String, required: true },
     to: { type: String, required: true },
-    byUserId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    byUserId: { type: Schema.Types.Mixed, ref: "User", default: null },
+    byUserName: { type: String, default: "" },
     at: { type: Date, default: Date.now },
   },
   { _id: false }
