@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IAddress extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId | string;
   city: string;
   street: string;
   house: string;
@@ -15,7 +15,7 @@ export interface IAddress extends Document {
 const AddressSchema = new Schema<IAddress>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed,
       ref: "User",
       required: [true, "ID пользователя обязателен"],
       index: true,
