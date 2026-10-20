@@ -27,22 +27,22 @@
 | 13 | Просмотр информации о доставке | Гость | T04 | Сделано | `src/app/delivery/page.tsx` (способы доставки: курьер, ПВЗ, самовывоз; тарифы, сроки, правила получения и FAQ) |
 | 14 | Просмотр информации об оплате | Гость | T04 | Сделано | `src/app/payment/page.tsx` (онлайн-оплата картами, при получении, безопасность 3D-Secure, 54-ФЗ чеки) |
 | 15 | Просмотр контактной информации магазина | Гость | T04 | Сделано | `src/app/contacts/page.tsx` (адрес, телефон горячей линии, email, реквизиты ООО «ТехноТорг», интерактивная форма) |
-| 16 | Просмотр профиля пользователя | Пользователь | T08 | Запланировано | T08 (`/account`) |
-| 17 | Изменение данных профиля пользователя | Пользователь | T08 | Запланировано | T08 (`/account`) |
-| 18 | Добавление адреса доставки | Пользователь | T06, T08 | Сделано | `src/models/Address.ts`, `src/app/api/addresses/route.ts`, `src/components/CheckoutContent.tsx` (модель `Address`, API `GET/POST /api/addresses`, выбор из сохраненных и сохранение нового адреса при оформлении заказа в T06; просмотр/удаление в ЛК в T08) |
-| 19 | Изменение сохранённого адреса доставки | Пользователь | T08 | Запланировано | T08 (`Address` model) |
-| 20 | Просмотр истории заказов | Пользователь | T08 | Запланировано | T08 (`/account/orders`) |
+| 16 | Просмотр профиля пользователя | Пользователь | T08 | Сделано | `src/app/account/page.tsx`, `src/components/account/ProfileContent.tsx`, `src/app/api/user/profile/route.ts`, `src/services/account.service.ts` (просмотр имени, телефона, email, роли и даты регистрации) |
+| 17 | Изменение данных профиля пользователя | Пользователь | T08 | Сделано | `src/components/account/ProfileContent.tsx`, `src/app/api/user/profile/route.ts`, `src/app/api/user/change-password/route.ts`, `src/services/account.service.ts` (редактирование имени и телефона, смена пароля с валидацией сложности) |
+| 18 | Добавление адреса доставки | Пользователь | T06, T08 | Сделано | `src/models/Address.ts`, `src/app/api/addresses/route.ts`, `src/components/account/AddressesContent.tsx`, `src/components/CheckoutContent.tsx` (добавление адреса в ЛК через модальное окно и при оформлении заказа) |
+| 19 | Изменение сохранённого адреса доставки | Пользователь | T08 | Сделано | `src/models/Address.ts`, `src/app/api/addresses/[id]/route.ts`, `src/components/account/AddressesContent.tsx`, `src/services/account.service.ts` (редактирование и удаление сохраненных адресов со строгой серверной проверкой владения) |
+| 20 | Просмотр истории заказов | Пользователь | T08 | Сделано | `src/app/account/orders/page.tsx`, `src/components/account/OrdersList.tsx`, `src/app/api/orders/route.ts`, `src/services/account.service.ts` (список заказов с табами фильтрации по статусам, суммами и датами) |
 | 21 | Сохранение корзины пользователя между сессиями (слияние) | Пользователь | T05 | Сделано | `src/models/Cart.ts`, `src/services/cart.service.ts`, `src/app/api/cart/route.ts`, `src/app/api/cart/merge/route.ts`, `src/app/login/page.tsx`, `src/app/register/page.tsx` (`Cart` model в MongoDB, API `GET/PUT/DELETE /api/cart`, слияние корзин при входе с суммированием количеств и ограничением доступным остатком `stockQuantity`, очистка `localStorage`) |
 | 22 | Добавление товара в избранное | Пользователь | T14 | Запланировано | T14 (Блок D, `Wishlist`) |
 | 23 | Удаление товара из избранного | Пользователь | T14 | Запланировано | T14 (Блок D) |
 | 24 | Написание отзыва на купленный товар | Пользователь | T13 | Запланировано | T13 (проверка наличия завершенного заказа, A-17) |
 | 25 | Редактирование собственного отзыва | Пользователь | T13 | Запланировано | T13 |
-| 26 | Просмотр статуса заказа | Пользователь | T08 | Запланировано | T08 |
-| 27 | Повторно оформить предыдущий заказ | Пользователь | T08 | Запланировано | T08 (добавление доступных товаров в корзину) |
+| 26 | Просмотр статуса заказа | Пользователь | T08 | Сделано | `src/app/account/orders/[id]/page.tsx`, `src/components/account/OrderDetailContent.tsx`, `src/app/api/orders/[id]/route.ts` (детальная страница заказа, полный состав, снимки цен и адреса, хронологическая история смены статусов) |
+| 27 | Повторно оформить предыдущий заказ | Пользователь | T08 | Сделано | `src/app/api/orders/[id]/repeat/route.ts`, `src/services/account.service.ts`, `src/components/account/OrdersList.tsx`, `src/components/account/OrderDetailContent.tsx` (добавление доступных товаров в текущую корзину с проверкой наличия и остатков) |
 | 28 | Подписка на уведомления о снижении цены | Пользователь | — | Вне MVP | Исключено из MVP согласно разделу 8 AGENT_SPEC |
 | 29 | Подписка на уведомления о наличии товара | Пользователь | — | Вне MVP | Исключено из MVP согласно разделу 8 AGENT_SPEC |
-| 30 | Управление согласием на получение рассылки | Пользователь | T08 | Запланировано | T08 (`consents.marketing`) |
-| 31 | Управление согласием на обработку ПДн (152-ФЗ) | Пользователь | T02, T06, T08 | Частично | T02: фиксация при регистрации (`consents.personalData`); T06: обязательный чекбокс и серверная Zod-проверка согласия при чекауте (`agreePersonalData: true`); T08: отзыв/управление в ЛК |
+| 30 | Управление согласием на получение рассылки | Пользователь | T08 | Сделано | `src/app/account/consents/page.tsx`, `src/components/account/ConsentsContent.tsx`, `src/app/api/user/consents/route.ts` (`consents.marketing`, интерактивный переключатель с фиксацией даты) |
+| 31 | Управление согласием на обработку ПДн (152-ФЗ) | Пользователь | T02, T06, T08 | Сделано | `src/app/account/consents/page.tsx`, `src/components/account/ConsentsContent.tsx`, `src/app/api/user/consents/route.ts` (переключатель согласия с обязательным модальным предупреждением об ограничении функций при попытке отзыва, блокировка новых заказов и фиксация времени) |
 | 32 | Менеджер: просмотр заказов | Менеджер | T10 | Запланировано | T10 (`/admin/orders`) |
 | 33 | Менеджер: изменение статуса заказа | Менеджер | T10 | Запланировано | T10 (`lib/order-status.ts`) |
 | 34 | Менеджер: добавление комментария к заказу | Менеджер | T10 | Запланировано | T10 |
