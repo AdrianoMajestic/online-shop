@@ -61,7 +61,7 @@ export interface IOrderStatusHistory {
 
 export interface IOrder extends Document {
   number: string; // Human-readable unique order number, e.g. "KB-10001"
-  userId: mongoose.Types.ObjectId | null; // nullable for guests
+  userId: mongoose.Types.ObjectId | string | null; // nullable for guests
   contact: IOrderContact;
   shippingAddress: IOrderShippingAddress;
   delivery: IOrderDeliverySnapshot;
@@ -104,7 +104,7 @@ const OrderShippingAddressSchema = new Schema<IOrderShippingAddress>(
 
 const OrderDeliverySnapshotSchema = new Schema<IOrderDeliverySnapshot>(
   {
-    methodId: { type: Schema.Types.ObjectId, ref: "DeliveryMethod", default: null },
+    methodId: { type: Schema.Types.Mixed, ref: "DeliveryMethod", default: null },
     title: { type: String, required: true, trim: true },
     price: {
       type: Number,
@@ -201,7 +201,7 @@ const OrderSchema = new Schema<IOrder>(
       index: true,
     },
     userId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed,
       ref: "User",
       default: null,
       index: true,
