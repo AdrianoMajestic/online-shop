@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "better-auth": "^1.7.7",
+    "bson": "^7.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.7",
@@ -26,6 +27,14 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"
+  },
+  "overrides": {
+    "bson": "^7.3.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "bson": "^7.3.3"
+    }
   },
   "devDependencies": {
     "@types/node": "^20.17.19",
