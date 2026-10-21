@@ -418,3 +418,33 @@
   2. Понижение версии native `mongodb` до 6.x: отклонено, так как адаптер Better Auth требует `mongodb@7.x`.
 - **Связанные задачи:** T08; req 16.
 
+---
+
+## D-021: Унифицированная обработка параметров фильтрации (categoryId/category, brandId/brand) и сортировки (sort, order)
+
+- **Дата:** 2026-10-21
+- **Статус:** Принято
+- **Контекст:** На странице каталога перестали корректно применяться фильтры по категориям, брендам и сортировка. Проблема была вызвана расхождением в наименовании и формате параметров между клиентом и сервером (`category` vs `categoryId`, `brand` vs `brandId`, строковые составные значения `price_asc`/`price_desc` vs раздельные `sort=price&order=asc|desc`), а также тем, что в Next.js App Router при навигации `router.replace(..., { scroll: false })` серверное дерево Server Component не всегда инвалидировало кэш и не перерендеривало свежие `searchParams`. Кроме того, категории и бренды могли передаваться как в виде `_id` (BSON ObjectId), так и в виде текстовых `slug` или названий.
+- **Решение:**
+  1. **Zod-валидация (`src/lib/validations/catalog.ts`):**
+     - Добавлены поля `categoryId`, `brandId`, `order` (`asc` | `desc`).
+     - Нормализация входных данных: `category = categoryId || category`, `brand = brandId || brand`, маппинг `sort + order` (`price_asc` / `price_desc`).
+     - Поддержка числовых и строковых представлений `page`, `limit`, `priceMin`, `priceMax`.
+  2. **Сервисный слой (`src/services/catalog.service.ts`):**
+     - `getCategoryAndDescendantIds` ищет категорию полиморфно по `_id` (ObjectId), латинскому `slug` или названию `title` (регистронезависимо).
+     - Фильтрация по брендам в `getProducts` поддерживает сопоставление по массиву `_id`, `slug` или регулярному выражению названий `title`.
+     - Сортировка поддерживает все варианты ключей: `price`, `price_asc`, `price_desc`, `new`/`createdAt`/`date`, `rating`/`ratingAvg`, `title`/`name`, `popular`/`salesCount`, с учетом направления `order` (`asc`/`desc`).
+  3. **API-эндпоинт (`src/app/api/products/route.ts`):**
+     - Считывает `categoryId`, `brandId`, `order` из `request.nextUrl.searchParams` и передает их в схему валидации.
+  4. **Серверная страница каталога (`src/app/catalog/page.tsx`):**
+     - Принимает `categoryId`, `brandId`, `order` в пропсах `searchParams` и корректно сопоставляет хлебные крошки как по slug, так и по `_id`.
+  5. **Клиентский компонент (`src/components/CatalogFilters.tsx`):**
+     - В `applyParams` добавлен явный вызов `router.refresh()` для гарантированной синхронизации динамической выдачи товаров в Server Components.
+     - Очищаются взаимоисключающие ключи при смене фильтров (`categoryId`/`category`, `brandId`/`brand`).
+     - Выбор бренда и категории устойчив к передаче ID или slug.
+- **Причина:** Обеспечение стабильной работы фильтрации и сортировки при любых источниках query-параметров (прямой ввод в URL, вызовы API, клики по сайдбару).
+- **Альтернативы:**
+  1. Жестко требовать только `slug` и запретить `categoryId`/`brandId`: ломает внешние ссылки и интеграции админки.
+  2. Оставить только клиентский рендеринг: нарушает требования SSR и SEO для каталога.
+- **Связанные задачи:** T03, T04; req 2, 4, 5.
+

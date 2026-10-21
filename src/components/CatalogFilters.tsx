@@ -72,15 +72,16 @@ export function CatalogFilters({
 
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      router.refresh();
     });
   };
 
   // Category select
   const handleCategorySelect = (slug: string | null) => {
     applyParams((params) => {
-      if (!slug) {
-        params.delete("category");
-      } else {
+      params.delete("category");
+      params.delete("categoryId");
+      if (slug) {
         params.set("category", slug);
       }
     });
@@ -90,14 +91,26 @@ export function CatalogFilters({
   // Brand toggle
   const handleBrandToggle = (slug: string) => {
     applyParams((params) => {
-      const currentList = params.getAll("brand");
-      params.delete("brand");
+      const currentList = [
+        ...params.getAll("brand"),
+        ...params.getAll("brandId"),
+      ]
+        .flatMap((b) => b.split(","))
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
 
-      if (currentList.includes(slug)) {
-        currentList.filter((b) => b !== slug).forEach((b) => params.append("brand", b));
+      params.delete("brand");
+      params.delete("brandId");
+
+      const normalizedSlug = slug.toLowerCase();
+      let updatedList: string[];
+      if (currentList.includes(normalizedSlug)) {
+        updatedList = currentList.filter((b) => b !== normalizedSlug);
       } else {
-        [...currentList, slug].forEach((b) => params.append("brand", b));
+        updatedList = [...currentList, normalizedSlug];
       }
+
+      updatedList.forEach((b) => params.append("brand", b));
     });
   };
 
@@ -137,6 +150,7 @@ export function CatalogFilters({
   const handleSortChange = (newSort: string) => {
     applyParams((params) => {
       params.set("sort", newSort);
+      params.delete("order");
     });
   };
 
@@ -153,6 +167,7 @@ export function CatalogFilters({
     setMaxRubles("");
     startTransition(() => {
       router.replace(pathname, { scroll: false });
+      router.refresh();
     });
     setIsMobileOpen(false);
   };
@@ -197,7 +212,7 @@ export function CatalogFilters({
           </button>
 
           {categories.map((rootCat) => {
-            const isRootActive = currentCategory === rootCat.slug;
+            const isRootActive = currentCategory === rootCat.slug || currentCategory === rootCat._id;
             const hasChildren = rootCat.children && rootCat.children.length > 0;
 
             return (
@@ -219,7 +234,7 @@ export function CatalogFilters({
                 {hasChildren && (
                   <div className="pl-3.5 space-y-1 border-l border-border/60 ml-2.5">
                     {rootCat.children.map((subCat) => {
-                      const isSubActive = currentCategory === subCat.slug;
+                      const isSubActive = currentCategory === subCat.slug || currentCategory === subCat._id;
                       return (
                         <button
                           key={subCat._id}
@@ -256,7 +271,12 @@ export function CatalogFilters({
 
         <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
           {brands.map((brand) => {
-            const isChecked = currentBrands.includes(brand.slug);
+            const isChecked = currentBrands.some(
+              (b) =>
+                b.toLowerCase() === brand.slug.toLowerCase() ||
+                b === brand._id ||
+                b.toLowerCase() === brand.title.toLowerCase()
+            );
             return (
               <label
                 key={brand._id}
@@ -447,22 +467,31 @@ export function CatalogFilters({
                   </span>
                 )}
 
-                {currentBrands.map((brandSlug) => (
-                  <span
-                    key={brandSlug}
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs"
-                  >
-                    Бренд: {brandSlug}
-                    <button
-                      type="button"
-                      onClick={() => handleBrandToggle(brandSlug)}
-                      aria-label={`Удалить фильтр бренда ${brandSlug}`}
-                      className="hover:text-emerald-600"
+                {currentBrands.map((brandSlug) => {
+                  const brandObj = brands.find(
+                    (b) =>
+                      b.slug.toLowerCase() === brandSlug.toLowerCase() ||
+                      b._id === brandSlug ||
+                      b.title.toLowerCase() === brandSlug.toLowerCase()
+                  );
+                  const displayTitle = brandObj ? brandObj.title : brandSlug;
+                  return (
+                    <span
+                      key={brandSlug}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs"
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
+                      Бренд: {displayTitle}
+                      <button
+                        type="button"
+                        onClick={() => handleBrandToggle(brandObj ? brandObj.slug : brandSlug)}
+                        aria-label={`Удалить фильтр бренда ${displayTitle}`}
+                        className="hover:text-emerald-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
 
                 {(currentPriceMin !== undefined || currentPriceMax !== undefined) && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-foreground shadow-xs">
