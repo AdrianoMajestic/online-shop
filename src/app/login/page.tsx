@@ -11,12 +11,18 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/account";
+  const reason = searchParams.get("reason");
   const { mergeGuestCartOnAuth } = useCart();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const sessionExpiredMessage =
+    reason === "session_expired"
+      ? "Сессия устарела или завершена. Пожалуйста, войдите снова"
+      : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +70,16 @@ function LoginForm() {
           Введите email и пароль для доступа к заказам и профилю
         </p>
       </div>
+
+      {sessionExpiredMessage && !error && (
+        <div
+          role="alert"
+          className="mb-6 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/90 dark:border-amber-900/60 dark:bg-amber-950/40 p-3.5 text-sm text-amber-800 dark:text-amber-300 animate-in fade-in duration-200"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span>{sessionExpiredMessage}</span>
+        </div>
+      )}
 
       {error && (
         <div

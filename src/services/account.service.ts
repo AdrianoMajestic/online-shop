@@ -53,14 +53,24 @@ export interface RepeatOrderResult {
  * Retrieves full user profile information from database
  */
 export async function getUserProfile(userId: string): Promise<UserProfileData> {
+  if (!userId) {
+    throw new NotFoundError("Пользователь не найден");
+  }
+
   await connectToDatabase();
   const db = getMongoDb();
 
+  const queryConditions: Array<Record<string, unknown>> = [
+    { _id: userId as never },
+    { id: userId },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(userId)) {
+    queryConditions.push({ _id: new mongoose.Types.ObjectId(userId) });
+  }
+
   const user = await db.collection("user").findOne({
-    $or: [
-      { _id: userId as never },
-      { id: userId },
-    ],
+    $or: queryConditions,
   });
 
   if (!user) {
@@ -88,15 +98,25 @@ export async function updateUserProfile(
   userId: string,
   input: UpdateProfileInput
 ): Promise<{ name: string; phone: string }> {
+  if (!userId) {
+    throw new NotFoundError("Пользователь не найден");
+  }
+
   await connectToDatabase();
   const db = getMongoDb();
 
+  const queryConditions: Array<Record<string, unknown>> = [
+    { _id: userId as never },
+    { id: userId },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(userId)) {
+    queryConditions.push({ _id: new mongoose.Types.ObjectId(userId) });
+  }
+
   const updateResult = await db.collection("user").updateOne(
     {
-      $or: [
-        { _id: userId as never },
-        { id: userId },
-      ],
+      $or: queryConditions,
     },
     {
       $set: {
@@ -170,14 +190,24 @@ export async function updateUserConsents(
   personalData?: { given?: boolean; at?: Date };
   marketing?: { given?: boolean; at?: Date };
 }> {
+  if (!userId) {
+    throw new NotFoundError("Пользователь не найден");
+  }
+
   await connectToDatabase();
   const db = getMongoDb();
 
+  const queryConditions: Array<Record<string, unknown>> = [
+    { _id: userId as never },
+    { id: userId },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(userId)) {
+    queryConditions.push({ _id: new mongoose.Types.ObjectId(userId) });
+  }
+
   const user = await db.collection("user").findOne({
-    $or: [
-      { _id: userId as never },
-      { id: userId },
-    ],
+    $or: queryConditions,
   });
 
   if (!user) {

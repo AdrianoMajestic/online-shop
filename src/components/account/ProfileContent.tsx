@@ -15,6 +15,7 @@ import {
   Loader2,
   Save,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 interface ProfileContentProps {
   initialUser: {
@@ -28,6 +29,16 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ initialUser }: ProfileContentProps) {
+  // Session expiration handler: clears local Better Auth session and redirects smoothly
+  const handleSessionExpired = async () => {
+    try {
+      await authClient.signOut();
+    } catch {
+      // Ignore network errors when signing out an invalid/expired session
+    }
+    window.location.href = "/login?reason=session_expired";
+  };
+
   // Profile state
   const [name, setName] = useState(initialUser.name || "");
   const [phone, setPhone] = useState(initialUser.phone || "");
@@ -70,6 +81,11 @@ export function ProfileContent({ initialUser }: ProfileContentProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
       });
+
+      if (res.status === 401 || res.status === 404) {
+        await handleSessionExpired();
+        return;
+      }
 
       const data = await res.json();
       if (!res.ok) {
@@ -120,6 +136,11 @@ export function ProfileContent({ initialUser }: ProfileContentProps) {
           confirmPassword,
         }),
       });
+
+      if (res.status === 401 || res.status === 404) {
+        await handleSessionExpired();
+        return;
+      }
 
       const data = await res.json();
       if (!res.ok) {
