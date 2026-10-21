@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import { getSession } from "@/lib/rbac";
-import { getUserProfile } from "@/services/account.service";
+import { getUserProfile, UserProfileData } from "@/services/account.service";
 import { ProfileContent } from "@/components/account/ProfileContent";
+import { NotFoundError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -8,14 +10,22 @@ export default async function AccountPage() {
   const sessionData = await getSession();
   const userId = sessionData?.user?.id;
 
-  const profile = userId ? await getUserProfile(userId) : null;
+  if (!userId) {
+    redirect("/login?reason=session_expired");
+  }
+
+  let profile: UserProfileData | null = null;
+  try {
+    profile = await getUserProfile(userId);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      redirect("/login?reason=session_expired");
+    }
+    throw error;
+  }
 
   if (!profile) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        Не удалось загрузить данные профиля.
-      </div>
-    );
+    redirect("/login?reason=session_expired");
   }
 
   return (

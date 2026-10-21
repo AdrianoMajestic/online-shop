@@ -15,27 +15,33 @@ interface CatalogPageProps {
   searchParams: {
     q?: string;
     category?: string;
+    categoryId?: string;
     brand?: string | string[];
+    brandId?: string | string[];
     priceMin?: string;
     priceMax?: string;
     sort?: string;
+    order?: string;
     page?: string;
     limit?: string;
   };
 }
 
 export async function generateMetadata({ searchParams }: CatalogPageProps): Promise<Metadata> {
-  if (searchParams.q) {
+  const q = searchParams.q;
+  const category = searchParams.category || searchParams.categoryId;
+
+  if (q) {
     return {
-      title: `Поиск «${searchParams.q}» | Каталог «Кабачок»`,
-      description: `Результаты поиска по запросу «${searchParams.q}» в каталоге интернет-магазина «Кабачок».`,
+      title: `Поиск «${q}» | Каталог «Кабачок»`,
+      description: `Результаты поиска по запросу «${q}» в каталоге интернет-магазина «Кабачок».`,
     };
   }
 
-  if (searchParams.category) {
+  if (category) {
     return {
-      title: `Каталог: ${searchParams.category} | Интернет-магазин «Кабачок»`,
-      description: `Купить товары категории ${searchParams.category} с гарантией и быстрой доставкой по России.`,
+      title: `Каталог: ${category} | Интернет-магазин «Кабачок»`,
+      description: `Купить товары категории ${category} с гарантией и быстрой доставкой по России.`,
     };
   }
 
@@ -46,21 +52,24 @@ export async function generateMetadata({ searchParams }: CatalogPageProps): Prom
 }
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
-  // Normalize brand parameter to array
-  let brandArray: string[] | undefined = undefined;
-  if (searchParams.brand) {
-    brandArray = Array.isArray(searchParams.brand)
-      ? searchParams.brand
-      : [searchParams.brand];
-  }
+  // Normalize brand parameter to array (supporting brand and brandId)
+  const rawBrands = [
+    ...(searchParams.brand ? (Array.isArray(searchParams.brand) ? searchParams.brand : [searchParams.brand]) : []),
+    ...(searchParams.brandId ? (Array.isArray(searchParams.brandId) ? searchParams.brandId : [searchParams.brandId]) : []),
+  ];
+  const brandArray = rawBrands.length > 0 ? rawBrands : undefined;
+  const categoryParam = searchParams.category || searchParams.categoryId;
 
   const parsedQuery = getProductsQuerySchema.safeParse({
     q: searchParams.q,
-    category: searchParams.category,
+    category: categoryParam,
+    categoryId: searchParams.categoryId,
     brand: brandArray,
+    brandId: searchParams.brandId,
     priceMin: searchParams.priceMin,
     priceMax: searchParams.priceMax,
     sort: searchParams.sort,
+    order: searchParams.order,
     page: searchParams.page,
     limit: searchParams.limit || 12,
   });
@@ -82,16 +91,16 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     slug: b.slug,
   }));
 
-  // Resolve category title for breadcrumbs
+  // Resolve category title for breadcrumbs (supports slug or _id)
   let currentCategoryTitle = "";
   if (query.category) {
     for (const root of categories) {
-      if (root.slug === query.category) {
+      if (root.slug === query.category || root._id === query.category) {
         currentCategoryTitle = root.title;
         break;
       }
       for (const child of root.children) {
-        if (child.slug === query.category) {
+        if (child.slug === query.category || child._id === query.category) {
           currentCategoryTitle = child.title;
           break;
         }

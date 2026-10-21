@@ -68,11 +68,33 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
 }
 
 /**
- * Collects IDs of a category and all its subcategories (recursively)
+ * Collects IDs of a category and all its subcategories (recursively by slug, ID, or title)
  */
-export async function getCategoryAndDescendantIds(slug: string): Promise<mongoose.Types.ObjectId[]> {
+export async function getCategoryAndDescendantIds(slugOrId: string): Promise<mongoose.Types.ObjectId[]> {
   await connectToDatabase();
-  const targetCategory = await Category.findOne({ slug, isVisible: true }).lean<ICategory>();
+  let targetCategory: ICategory | null = null;
+
+  if (mongoose.Types.ObjectId.isValid(slugOrId)) {
+    targetCategory = await Category.findOne({
+      _id: new mongoose.Types.ObjectId(slugOrId),
+      isVisible: true,
+    }).lean<ICategory>();
+  }
+
+  if (!targetCategory) {
+    targetCategory = await Category.findOne({
+      slug: slugOrId.toLowerCase(),
+      isVisible: true,
+    }).lean<ICategory>();
+  }
+
+  if (!targetCategory) {
+    targetCategory = await Category.findOne({
+      title: new RegExp(`^${escapeRegex(slugOrId)}$`, "i"),
+      isVisible: true,
+    }).lean<ICategory>();
+  }
+
   if (!targetCategory) {
     return [];
   }
@@ -128,7 +150,7 @@ export async function getProducts(query: Partial<GetProductsQuery> = {}): Promis
     ];
   }
 
-  // 2. Category filtering (including all descendants)
+  // 2. Category filtering (including all descendants by slug, ID, or title)
   if (query.category) {
     const categoryIds = await getCategoryAndDescendantIds(query.category);
     if (categoryIds.length === 0) {
@@ -143,11 +165,40 @@ export async function getProducts(query: Partial<GetProductsQuery> = {}): Promis
     filter.categoryId = { $in: categoryIds };
   }
 
-  // 3. Brand filtering (multiselect by brand slugs)
+  // 3. Brand filtering (multiselect by brand slugs, titles, or ObjectIds)
   if (query.brand && query.brand.length > 0) {
-    const brands = await Brand.find({ slug: { $in: query.brand } }).select("_id").lean();
-    const brandIds = brands.map((b) => b._id);
-    if (brandIds.length === 0) {
+    const objectIds: mongoose.Types.ObjectId[] = [];
+    const stringIdentifiers: string[] = [];
+
+    for (const b of query.brand) {
+      if (mongoose.Types.ObjectId.isValid(b)) {
+        objectIds.push(new mongoose.Types.ObjectId(b));
+      }
+      stringIdentifiers.push(b);
+    }
+
+    const brandConditions: FilterQuery<IBrand>[] = [];
+    if (objectIds.length > 0) {
+      brandConditions.push({ _id: { $in: objectIds } });
+    }
+    if (stringIdentifiers.length > 0) {
+      brandConditions.push({ slug: { $in: stringIdentifiers.map((s) => s.toLowerCase()) } });
+      brandConditions.push({
+        title: {
+          $in: stringIdentifiers.map((s) => new RegExp(`^${escapeRegex(s)}$`, "i")),
+        },
+      });
+    }
+
+    const matchedBrands = await Brand.find({ $or: brandConditions }).select("_id").lean();
+    const matchedBrandIds = Array.from(
+      new Set([
+        ...objectIds.map((id) => id.toString()),
+        ...matchedBrands.map((b) => b._id.toString()),
+      ])
+    ).map((id) => new mongoose.Types.ObjectId(id));
+
+    if (matchedBrandIds.length === 0) {
       return {
         items: [],
         page,
@@ -155,7 +206,7 @@ export async function getProducts(query: Partial<GetProductsQuery> = {}): Promis
         total: 0,
       };
     }
-    filter.brandId = { $in: brandIds };
+    filter.brandId = { $in: matchedBrandIds };
   }
 
   // 4. Price range filtering
@@ -170,24 +221,41 @@ export async function getProducts(query: Partial<GetProductsQuery> = {}): Promis
     filter.price = priceCondition;
   }
 
-  // 5. Sorting
+  // 5. Sorting (supports sort and order)
   let sortOption: Record<string, 1 | -1> = { salesCount: -1, _id: -1 };
-  switch (query.sort) {
+  const sort = (query.sort || "popular") as string;
+  const order = query.order;
+  const isAsc = order === "asc" || order === "1";
+
+  switch (sort) {
     case "price_asc":
       sortOption = { price: 1, _id: 1 };
       break;
     case "price_desc":
       sortOption = { price: -1, _id: -1 };
       break;
+    case "price":
+      sortOption = isAsc ? { price: 1, _id: 1 } : { price: -1, _id: -1 };
+      break;
     case "new":
-      sortOption = { createdAt: -1, _id: -1 };
+    case "createdAt":
+    case "date":
+      sortOption = isAsc ? { createdAt: 1, _id: 1 } : { createdAt: -1, _id: -1 };
       break;
     case "rating":
-      sortOption = { ratingAvg: -1, reviewsCount: -1, _id: -1 };
+    case "ratingAvg":
+      sortOption = isAsc
+        ? { ratingAvg: 1, reviewsCount: 1, _id: 1 }
+        : { ratingAvg: -1, reviewsCount: -1, _id: -1 };
+      break;
+    case "title":
+    case "name":
+      sortOption = isAsc ? { title: 1, _id: 1 } : { title: -1, _id: -1 };
       break;
     case "popular":
+    case "salesCount":
     default:
-      sortOption = { salesCount: -1, _id: -1 };
+      sortOption = isAsc ? { salesCount: 1, _id: 1 } : { salesCount: -1, _id: -1 };
       break;
   }
 

@@ -10,26 +10,37 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
 
     // Collect query params
     const q = searchParams.get("q") ?? undefined;
-    const category = searchParams.get("category") ?? undefined;
-    const brandParam = searchParams.getAll("brand");
-    const brand = brandParam.length > 0 ? brandParam : (searchParams.get("brand") ?? undefined);
+    const category = searchParams.get("category") || searchParams.get("categoryId") || undefined;
+    const categoryId = searchParams.get("categoryId") ?? undefined;
+
+    const brandParams = [
+      ...searchParams.getAll("brand"),
+      ...searchParams.getAll("brandId"),
+    ];
+    const brand = brandParams.length > 0 ? brandParams : (searchParams.get("brand") || searchParams.get("brandId") || undefined);
+    const brandId = searchParams.get("brandId") ?? undefined;
+
     const priceMin = searchParams.get("priceMin") ?? undefined;
     const priceMax = searchParams.get("priceMax") ?? undefined;
     const sort = searchParams.get("sort") ?? undefined;
+    const order = searchParams.get("order") ?? undefined;
     const page = searchParams.get("page") ?? undefined;
     const limit = searchParams.get("limit") ?? undefined;
 
     const validatedQuery = getProductsQuerySchema.parse({
       q,
       category,
+      categoryId,
       brand,
+      brandId,
       priceMin,
       priceMax,
       sort,
+      order,
       page,
       limit,
     });

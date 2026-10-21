@@ -632,4 +632,88 @@ describe("Account Business Logic, Security & API (T08)", () => {
       expect(data.consents.marketing.given).toBe(true);
     });
   });
+
+  describe("Profile Lookup & Missing User Fallback (T08 Fix)", () => {
+    it("getUserProfile queries by ObjectId and id, and handles ObjectId correctly", async () => {
+      const validObjectIdStr = "65a000000000000000000400";
+      const mockFindOne = vi.fn().mockResolvedValue({
+        _id: new mongoose.Types.ObjectId(validObjectIdStr),
+        id: validObjectIdStr,
+        name: "Анна",
+        email: "anna@test.ru",
+        role: "customer",
+        phone: "+79001234567",
+      });
+
+      vi.spyOn(dbModule, "getMongoDb").mockReturnValue({
+        collection: vi.fn().mockReturnValue({
+          findOne: mockFindOne,
+        }),
+      } as never);
+
+      const profile = await accountService.getUserProfile(validObjectIdStr);
+      expect(profile).toBeDefined();
+      expect(profile.name).toBe("Анна");
+      expect(profile.id).toBe(validObjectIdStr);
+
+      expect(mockFindOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          $or: expect.arrayContaining([
+            { id: validObjectIdStr },
+            { _id: validObjectIdStr },
+            { _id: new mongoose.Types.ObjectId(validObjectIdStr) },
+          ]),
+        })
+      );
+    });
+
+    it("getUserProfile throws NotFoundError when user does not exist", async () => {
+      vi.spyOn(dbModule, "getMongoDb").mockReturnValue({
+        collection: vi.fn().mockReturnValue({
+          findOne: vi.fn().mockResolvedValue(null),
+        }),
+      } as never);
+
+      await expect(
+        accountService.getUserProfile("65a000000000000000000999")
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("GET /api/user/profile returns 401 and clears session cookies when user is missing in DB", async () => {
+      vi.spyOn(auth.api, "getSession").mockResolvedValue({
+        user: { id: currentUserId },
+      } as never);
+      vi.spyOn(accountService, "getUserProfile").mockRejectedValue(
+        new NotFoundError("Пользователь не найден")
+      );
+
+      const req = new NextRequest("http://localhost:3000/api/user/profile");
+      const res = await getProfileHandler(req);
+
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error.code).toBe("UNAUTHORIZED");
+      expect(res.cookies.get("better-auth.session_token")?.value).toBe("");
+    });
+
+    it("PATCH /api/user/profile returns 401 and clears session cookies when user is missing in DB", async () => {
+      vi.spyOn(auth.api, "getSession").mockResolvedValue({
+        user: { id: currentUserId },
+      } as never);
+      vi.spyOn(accountService, "updateUserProfile").mockRejectedValue(
+        new NotFoundError("Пользователь не найден")
+      );
+
+      const req = new NextRequest("http://localhost:3000/api/user/profile", {
+        method: "PATCH",
+        body: JSON.stringify({ name: "Новое Имя", phone: "+79001112233" }),
+      });
+      const res = await patchProfileHandler(req);
+
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error.code).toBe("UNAUTHORIZED");
+      expect(res.cookies.get("better-auth.session_token")?.value).toBe("");
+    });
+  });
 });
